@@ -1,6 +1,8 @@
 import './styles.css';
+import './ui/title.css';
 import { Game, type GameState } from './game/Game';
 import { LEVELS } from './game/levels';
+import { TitleScreen } from './ui/TitleScreen';
 
 const PROGRESS_KEY = 'coi-progress';
 
@@ -16,9 +18,9 @@ function saveProgress(idx: number) {
 const app = document.getElementById('app')!;
 const game = new Game(app);
 
-// ---- Overlay layer -----------------------------------------------------------
+// ---- Secondary overlay layer (mission select / controls / pause / end cards) -
 const overlay = document.createElement('div');
-overlay.className = 'overlay';
+overlay.className = 'overlay hidden';
 document.body.appendChild(overlay);
 
 function clearOverlay() {
@@ -28,7 +30,6 @@ function clearOverlay() {
 function hideOverlay() {
   overlay.classList.add('hidden');
 }
-
 function button(label: string, primary = false): HTMLButtonElement {
   const b = document.createElement('button');
   b.className = 'btn' + (primary ? ' primary' : '');
@@ -36,48 +37,29 @@ function button(label: string, primary = false): HTMLButtonElement {
   return b;
 }
 
-// ---- Screens -----------------------------------------------------------------
-function titleScreen() {
-  clearOverlay();
-  const unlocked = loadProgress();
+// ---- Cinematic title screen --------------------------------------------------
+const title = new TitleScreen({
+  onNewGame: () => game.startLevel(0),
+  onContinue: () => game.startLevel(loadProgress()),
+  onOperations: () => openSubScreen(missionSelectScreen),
+  onArmory: () => openSubScreen(controlsScreen),
+  onSettings: () => openSubScreen(settingsScreen),
+});
+title.hide();
 
-  const wrap = document.createElement('div');
-  wrap.innerHTML = `
-    <div class="title">
-      <span class="t-co">Covert Operations</span>
-      <span class="t-inst">Instincts</span>
-    </div>
-    <p class="tagline">
-      They wiped your name and made you a weapon. The memories are coming back —
-      and with them, instincts no human should have. Infiltrate the jungle, the
-      labs, the black site. Set your traps. Take your revenge.
-    </p>
-  `;
-  overlay.appendChild(wrap);
-
-  const btns = document.createElement('div');
-  btns.className = 'menu-btns';
-
-  const begin = button(unlocked > 0 ? 'Continue Operation' : 'Begin Operation', true);
-  begin.onclick = () => game.startLevel(unlocked);
-  btns.appendChild(begin);
-
-  const select = button('Mission Select');
-  select.onclick = missionSelectScreen;
-  btns.appendChild(select);
-
-  const help = button('How to Play');
-  help.onclick = controlsScreen;
-  btns.appendChild(help);
-
-  overlay.appendChild(btns);
-
-  const hint = document.createElement('div');
-  hint.className = 'hint';
-  hint.textContent = 'Best played on desktop with mouse + keyboard. Click "Begin" to lock the mouse; press Esc to pause.';
-  overlay.appendChild(hint);
+function showTitle() {
+  hideOverlay();
+  title.refresh(loadProgress() > 0);
+  title.show();
 }
 
+// Open a menu sub-screen (built into the shared overlay), hiding the title.
+function openSubScreen(render: () => void) {
+  title.hide();
+  render();
+}
+
+// ---- Sub-screens -------------------------------------------------------------
 function missionSelectScreen() {
   clearOverlay();
   const unlocked = loadProgress();
@@ -85,7 +67,7 @@ function missionSelectScreen() {
   const h = document.createElement('div');
   h.className = 'title';
   h.style.fontSize = '40px';
-  h.innerHTML = '<span class="t-co">Mission Select</span>';
+  h.innerHTML = '<span class="t-co">Operations</span>';
   overlay.appendChild(h);
 
   const grid = document.createElement('div');
@@ -106,7 +88,7 @@ function missionSelectScreen() {
 
   const back = button('Back');
   back.style.marginTop = '24px';
-  back.onclick = titleScreen;
+  back.onclick = showTitle;
   overlay.appendChild(back);
 }
 
@@ -115,7 +97,7 @@ function controlsScreen() {
   const h = document.createElement('div');
   h.className = 'title';
   h.style.fontSize = '40px';
-  h.innerHTML = '<span class="t-co">How to Play</span>';
+  h.innerHTML = '<span class="t-co">Armory &amp; Field Manual</span>';
   overlay.appendChild(h);
 
   const rows: [string, string][] = [
@@ -158,8 +140,52 @@ function controlsScreen() {
 
   const back = button('Back');
   back.style.marginTop = '8px';
-  back.onclick = titleScreen;
+  back.onclick = showTitle;
   overlay.appendChild(back);
+}
+
+function settingsScreen() {
+  clearOverlay();
+  const h = document.createElement('div');
+  h.className = 'title';
+  h.style.fontSize = '40px';
+  h.innerHTML = '<span class="t-co">Settings</span>';
+  overlay.appendChild(h);
+
+  const btns = document.createElement('div');
+  btns.className = 'menu-btns';
+
+  const audio = button(game.audio.enabled ? 'Sound: On' : 'Sound: Off');
+  audio.onclick = () => {
+    game.audio.enabled = !game.audio.enabled;
+    audio.textContent = game.audio.enabled ? 'Sound: On' : 'Sound: Off';
+  };
+
+  const replay = button('Replay Intro');
+  replay.onclick = () => {
+    try {
+      localStorage.removeItem('coi_intro');
+    } catch {
+      /* ignore */
+    }
+    location.reload();
+  };
+
+  const reset = button('Reset Campaign Progress');
+  reset.onclick = () => {
+    try {
+      localStorage.removeItem(PROGRESS_KEY);
+    } catch {
+      /* ignore */
+    }
+    reset.textContent = 'Progress Cleared';
+  };
+
+  const back = button('Back', true);
+  back.onclick = showTitle;
+
+  btns.append(audio, replay, reset, back);
+  overlay.appendChild(btns);
 }
 
 function pauseScreen() {
@@ -176,11 +202,9 @@ function pauseScreen() {
   resume.onclick = () => game.resume();
   const restart = button('Restart Mission');
   restart.onclick = () => game.restartLevel();
-  const select = button('Mission Select');
-  select.onclick = () => game.returnToMenu();
   const menu = button('Main Menu');
   menu.onclick = () => game.returnToMenu();
-  btns.append(resume, restart, select, menu);
+  btns.append(resume, restart, menu);
   overlay.appendChild(btns);
 }
 
@@ -230,7 +254,7 @@ function completeScreen(levelIndex: number) {
     btns.appendChild(next);
   } else {
     const fin = button('Finish', true);
-    fin.onclick = () => game.nextLevel(); // triggers victory
+    fin.onclick = () => game.nextLevel();
     btns.appendChild(fin);
   }
   const menu = button('Main Menu');
@@ -257,15 +281,16 @@ function victoryScreen() {
   `;
   overlay.appendChild(p);
   const menu = button('Return to Menu', true);
-  menu.onclick = titleScreen;
+  menu.onclick = () => game.returnToMenu();
   overlay.appendChild(menu);
 }
 
-// ---- Wire game state -> overlay ----------------------------------------------
+// ---- Wire game state -> UI ---------------------------------------------------
 game.onStateChange = (state: GameState, info) => {
+  if (state !== 'menu') title.hide();
   switch (state) {
     case 'menu':
-      titleScreen();
+      showTitle();
       break;
     case 'playing':
       hideOverlay();
@@ -285,5 +310,5 @@ game.onStateChange = (state: GameState, info) => {
   }
 };
 
-// Boot to title.
-titleScreen();
+// Boot to the cinematic title.
+showTitle();
