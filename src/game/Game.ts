@@ -12,6 +12,17 @@ import { clamp } from './physics';
 
 export type GameState = 'menu' | 'playing' | 'paused' | 'dead' | 'complete' | 'victory';
 
+// Coarse-pointer / touch devices (iPhone, iPad, Android) drive the game with
+// on-screen controls instead of pointer lock. iPadOS Safari masquerades as a
+// desktop Mac, so also treat a "MacIntel" UA with multiple touch points as touch.
+export const IS_TOUCH =
+  typeof window !== 'undefined' &&
+  (((window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ||
+    'ontouchstart' in window ||
+    (typeof navigator !== 'undefined' &&
+      navigator.platform === 'MacIntel' &&
+      navigator.maxTouchPoints > 1)) as boolean);
+
 const TRAP_TYPES: TrapType[] = ['mine', 'snare', 'emp'];
 
 export class Game {
@@ -68,7 +79,7 @@ export class Game {
 
     window.addEventListener('resize', () => this.onResize());
     document.addEventListener('pointerlockchange', () => {
-      if (!this.input.pointerLocked && this.state === 'playing') {
+      if (!IS_TOUCH && !this.input.pointerLocked && this.state === 'playing') {
         this.pause();
       }
     });
@@ -150,7 +161,7 @@ export class Game {
 
     this.setState('playing');
     this.input.enabled = true;
-    this.input.requestPointerLock();
+    if (!IS_TOUCH) this.input.requestPointerLock();
     this.audio.resumeFromGesture();
   }
 
@@ -189,7 +200,7 @@ export class Game {
   resume() {
     if (this.state !== 'paused') return;
     this.setState('playing');
-    this.input.requestPointerLock();
+    if (!IS_TOUCH) this.input.requestPointerLock();
   }
 
   returnToMenu() {

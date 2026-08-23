@@ -53,6 +53,20 @@ traps, and take your revenge.
 
 Best played on desktop with mouse + keyboard.
 
+### Touch (iPhone / iPad)
+
+On phones and tablets the game shows on-screen controls automatically:
+
+- **Left joystick** — move.
+- **Drag anywhere else** — look / aim.
+- **JUMP · ✊ melee · E** takedown/interact (bottom-right thumb cluster).
+- **CLOAK · SPRINT · CROUCH** (right column; sprint & crouch are hold-toggles).
+- **TRAP · SWAP** (near the joystick), **VIEW** (top-right) toggles first/third
+  person, **❚❚** (top-left) pauses.
+- Tap the **instinct icons** (bottom-centre) to fire unlocked powers.
+
+Landscape orientation is recommended; a hint appears in portrait.
+
 ## Development
 
 ```bash

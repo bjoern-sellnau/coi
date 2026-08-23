@@ -10,6 +10,9 @@ export class Input {
   mouseButtons = new Set<number>();
   pointerLocked = false;
 
+  // Virtual keys held down by on-screen (touch) buttons.
+  private virtualHeld = new Set<string>();
+
   // Mobile virtual joystick / look deltas, fed in externally.
   touchMoveX = 0;
   touchMoveY = 0;
@@ -61,6 +64,9 @@ export class Input {
     window.addEventListener('blur', () => {
       this.keys.clear();
       this.mouseButtons.clear();
+      this.virtualHeld.clear();
+      this.touchMoveX = 0;
+      this.touchMoveY = 0;
     });
   }
 
@@ -73,7 +79,33 @@ export class Input {
   }
 
   isDown(code: string): boolean {
-    return this.keys.has(code);
+    return this.keys.has(code) || this.virtualHeld.has(code);
+  }
+
+  // ---- Virtual input from on-screen touch controls ----
+  // A momentary tap that reads like a key press for one frame.
+  tapKey(code: string) {
+    this.pressedThisFrame.add(code);
+  }
+  // A momentary tap that reads like a mouse-button press for one frame.
+  tapMouse(button: number) {
+    this.mousePressedThisFrame.add(button);
+  }
+  // Hold / release a virtual key (sprint, crouch, …).
+  setHeld(code: string, on: boolean) {
+    if (on) this.virtualHeld.add(code);
+    else this.virtualHeld.delete(code);
+  }
+  toggleHeld(code: string): boolean {
+    if (this.virtualHeld.has(code)) {
+      this.virtualHeld.delete(code);
+      return false;
+    }
+    this.virtualHeld.add(code);
+    return true;
+  }
+  isHeld(code: string): boolean {
+    return this.virtualHeld.has(code);
   }
 
   wasPressed(code: string): boolean {

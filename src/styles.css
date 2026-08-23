@@ -542,3 +542,238 @@ canvas {
   letter-spacing: 4px;
   text-transform: uppercase;
 }
+
+/* ============================================================================
+   MOBILE / TOUCH CONTROLS (iPhone & iPad)
+   ========================================================================== */
+
+:root {
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+}
+
+/* Full-screen surface that turns drags into camera-look (below HUD & buttons). */
+#mb-look {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: none;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Button layer above the HUD. Container is click-through; children are not. */
+#mb-buttons {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  display: none;
+  pointer-events: none;
+  touch-action: none;
+}
+#mb-buttons .mb-btn,
+#mb-buttons #mb-joy {
+  pointer-events: auto;
+}
+
+.mb-btn {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 60px;
+  height: 60px;
+  padding: 0 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(56, 224, 196, 0.5);
+  background: rgba(6, 20, 22, 0.42);
+  backdrop-filter: blur(4px);
+  color: var(--ink);
+  font-family: var(--font);
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  transition: background 0.1s, border-color 0.1s, box-shadow 0.1s;
+}
+.mb-btn.down {
+  background: rgba(56, 224, 196, 0.4);
+  border-color: var(--accent);
+  box-shadow: 0 0 14px rgba(56, 224, 196, 0.5);
+}
+.mb-btn.on {
+  background: rgba(56, 224, 196, 0.32);
+  border-color: var(--accent);
+  color: #eafffb;
+  box-shadow: 0 0 12px rgba(56, 224, 196, 0.55);
+}
+
+.mb-group {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  pointer-events: none;
+}
+
+/* Joystick */
+#mb-joy {
+  position: fixed;
+  left: calc(24px + var(--safe-l));
+  bottom: calc(26px + var(--safe-b));
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  border: 1px solid rgba(56, 224, 196, 0.32);
+  background: radial-gradient(circle at 50% 50%, rgba(56, 224, 196, 0.08), rgba(6, 20, 22, 0.32));
+  touch-action: none;
+}
+#mb-joy-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(56, 224, 196, 0.32);
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 14px rgba(56, 224, 196, 0.45);
+}
+
+/* Action cluster (bottom-right thumb): melee, takedown, jump (jump nearest thumb) */
+#mb-actions {
+  right: calc(16px + var(--safe-r));
+  bottom: calc(20px + var(--safe-b));
+}
+.mb-btn.act-jump {
+  width: 84px;
+  height: 84px;
+  font-size: 14px;
+  border-color: var(--accent);
+  background: rgba(56, 224, 196, 0.16);
+}
+.mb-btn.act-take {
+  border-color: var(--warn);
+}
+.mb-btn.act-melee {
+  font-size: 22px;
+}
+
+/* Mode column (cloak / sprint / crouch) above the action cluster */
+#mb-modes {
+  right: calc(20px + var(--safe-r));
+  bottom: calc(214px + var(--safe-b));
+}
+.mb-btn.mode,
+.mb-btn.trap {
+  width: 66px;
+  height: 52px;
+  border-radius: 12px;
+  font-size: 11px;
+}
+
+/* Trap row, just to the right of the joystick */
+#mb-traps {
+  left: calc(174px + var(--safe-l));
+  bottom: calc(26px + var(--safe-b));
+  flex-direction: row;
+}
+
+/* Corner buttons */
+.mb-btn.corner {
+  position: fixed;
+}
+#mb-pause {
+  top: calc(10px + var(--safe-t));
+  left: calc(10px + var(--safe-l));
+  width: 50px;
+  height: 50px;
+  font-size: 15px;
+}
+#mb-view {
+  top: calc(10px + var(--safe-t));
+  right: calc(10px + var(--safe-r));
+  width: 58px;
+  height: 50px;
+  border-radius: 12px;
+}
+
+/* Rotate-to-landscape hint */
+#mb-rotate {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 14px;
+  background: rgba(2, 6, 8, 0.94);
+  color: var(--accent);
+  text-align: center;
+  padding: 30px;
+  font-family: var(--font);
+  font-size: 19px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+#mb-rotate .rot-icon {
+  font-size: 46px;
+  animation: rotHint 2s ease-in-out infinite;
+}
+@keyframes rotHint {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(90deg); }
+}
+@media (orientation: portrait) {
+  body.touch.playing #mb-rotate {
+    display: flex;
+  }
+}
+
+/* ---- HUD re-layout for touch so nothing sits under the thumbs ---- */
+body.touch #objective {
+  top: calc(52px + var(--safe-t));
+  left: calc(12px + var(--safe-l));
+  max-width: 46vw;
+  font-size: 12px;
+  padding: 7px 10px;
+}
+body.touch #meta {
+  top: calc(70px + var(--safe-t));
+  right: calc(12px + var(--safe-r));
+}
+body.touch #detection {
+  top: calc(16px + var(--safe-t));
+}
+body.touch #status {
+  left: calc(14px + var(--safe-l));
+  bottom: calc(178px + var(--safe-b));
+  width: 168px;
+}
+body.touch #powers {
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(14px + var(--safe-b));
+  pointer-events: auto;
+}
+body.touch #powers .power {
+  pointer-events: auto;
+  width: 52px;
+  height: 52px;
+}
+body.touch #prompt {
+  top: 60%;
+}

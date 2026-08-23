@@ -1,8 +1,9 @@
 import './styles.css';
 import './ui/title.css';
-import { Game, type GameState } from './game/Game';
+import { Game, IS_TOUCH, type GameState } from './game/Game';
 import { LEVELS } from './game/levels';
 import { TitleScreen } from './ui/TitleScreen';
+import { MobileControls } from './game/MobileControls';
 
 const PROGRESS_KEY = 'coi-progress';
 
@@ -17,6 +18,13 @@ function saveProgress(idx: number) {
 
 const app = document.getElementById('app')!;
 const game = new Game(app);
+
+// On-screen controls for touch devices (iPhone / iPad).
+let mobile: MobileControls | undefined;
+if (IS_TOUCH) {
+  document.body.classList.add('touch');
+  mobile = new MobileControls(game.input, { onPause: () => game.pause() });
+}
 
 // ---- Secondary overlay layer (mission select / controls / pause / end cards) -
 const overlay = document.createElement('div');
@@ -288,6 +296,14 @@ function victoryScreen() {
 // ---- Wire game state -> UI ---------------------------------------------------
 game.onStateChange = (state: GameState, info) => {
   if (state !== 'menu') title.hide();
+  // Mobile controls & the rotate hint are only live during play.
+  if (state === 'playing') {
+    mobile?.show();
+    document.body.classList.add('playing');
+  } else {
+    mobile?.hide();
+    document.body.classList.remove('playing');
+  }
   switch (state) {
     case 'menu':
       showTitle();
@@ -312,3 +328,6 @@ game.onStateChange = (state: GameState, info) => {
 
 // Boot to the cinematic title.
 showTitle();
+
+// Dev-only debug handle (stripped from production builds).
+if (import.meta.env.DEV) (window as unknown as { __coiGame: Game }).__coiGame = game;
